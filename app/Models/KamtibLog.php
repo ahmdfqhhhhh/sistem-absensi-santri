@@ -38,9 +38,18 @@ class KamtibLog extends Model
         'tindakan_sanksi',
         'status_penyelesaian',
         'recorded_by',
+        'nama_petugas',
         'catatan',
         'bukti_foto_path',
     ];
+
+    /**
+     * Nama petugas jaga yang bertugas di gerbang.
+     */
+    public function getPetugasNamaAttribute(): string
+    {
+        return $this->nama_petugas ?: ($this->recordedBy?->name ?? 'Petugas Gerbang');
+    }
 
     /**
      * Get the attributes that should be cast.

@@ -54,4 +54,14 @@ class Asrama extends Model
     {
         return $this->hasMany(Santri::class, 'asrama_id');
     }
+
+    /**
+     * Relasi ke daftar Kamar dalam asrama ini.
+     *
+     * @return HasMany<Kamar, $this>
+     */
+    public function kamars(): HasMany
+    {
+        return $this->hasMany(Kamar::class, 'asrama_id');
+    }
 }

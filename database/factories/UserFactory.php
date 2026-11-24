@@ -27,6 +27,8 @@ class UserFactory extends Factory
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
+            'role' => User::ROLE_MUSYRIF,
+            'no_hp' => fake()->phoneNumber(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
@@ -40,6 +42,46 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    public function superAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => User::ROLE_SUPER_ADMIN,
+        ]);
+    }
+
+    public function musyrif(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => User::ROLE_MUSYRIF,
+        ]);
+    }
+
+    public function keamanan(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => User::ROLE_KEAMANAN,
+        ]);
+    }
+
+    public function kamtib(): static
+    {
+        return $this->keamanan();
+    }
+
+    public function waliSantri(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => User::ROLE_WALI_SANTRI,
+        ]);
+    }
+
+    public function bendahara(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => User::ROLE_BENDAHARA,
         ]);
     }
 }

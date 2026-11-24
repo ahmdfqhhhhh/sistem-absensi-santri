@@ -30,7 +30,7 @@ class KamtibLogResource extends JsonResource
             'tindakan_sanksi' => $this->tindakan_sanksi,
             'status_penyelesaian' => $this->status_penyelesaian,
             'catatan' => $this->catatan,
-            'petugas' => $this->recordedBy?->name,
+            'petugas' => $this->nama_petugas ?: $this->recordedBy?->name,
             'santri' => [
                 'id' => $this->santri?->id,
                 'nis' => $this->santri?->nis,

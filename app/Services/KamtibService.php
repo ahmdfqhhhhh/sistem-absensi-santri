@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Exceptions\AbsensiException;
 use App\Models\KamtibLog;
 use App\Models\Perizinan;
+use App\Models\Santri;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -24,7 +25,8 @@ class KamtibService
         string $action = 'auto',
         ?int $petugasId = null,
         ?string $lokasi = null,
-        ?string $catatan = null
+        ?string $catatan = null,
+        ?string $namaPetugas = null
     ): array {
         // 1. Ekstrak token QR
         $qrToken = $this->extractToken($qrData);
@@ -34,6 +36,19 @@ class KamtibService
             ->with(['santri.asrama', 'santri.kelas', 'approvedBy'])
             ->where('qr_token', $qrToken)
             ->first();
+
+        // Fallback: jika QR yang dipindai adalah NIS Kartu Santri fisik (kertas surat izin tertinggal)
+        if (! $perizinan) {
+            $santri = Santri::where('nis', $qrData)->orWhere('nis', $qrToken)->first();
+            if ($santri) {
+                $perizinan = Perizinan::query()
+                    ->with(['santri.asrama', 'santri.kelas', 'approvedBy'])
+                    ->where('santri_id', $santri->id)
+                    ->whereIn('status', ['disetujui', 'sedang_berlangsung'])
+                    ->latest('id')
+                    ->first();
+            }
+        }
 
         if (! $perizinan) {
             throw new AbsensiException(
@@ -94,7 +109,8 @@ class KamtibService
             $now,
             $lokasiCheckpoint,
             $petugasId,
-            $catatan
+            $catatan,
+            $namaPetugas
         ) {
             $isTerlambat = false;
             $kamtibLog = null;
@@ -121,6 +137,7 @@ class KamtibService
                     'tindakan_sanksi' => null,
                     'status_penyelesaian' => 'selesai',
                     'recorded_by' => $petugasId,
+                    'nama_petugas' => $namaPetugas,
                     'catatan' => $keteranganKeluar,
                 ]);
 
@@ -137,7 +154,9 @@ class KamtibService
                 $poinLog = 0;
                 $sanksiLog = null;
                 $statusPenyelesaianLog = 'selesai';
-                $catatanLog = $catatan ?? 'Santri kembali tepat waktu ke lingkungan pondok pesantren.';
+                $catatanLog = $catatan
+                    ? $catatan . ' (Bukti Kepulangan Sah Terverifikasi).'
+                    : 'Santri kembali tepat waktu ke lingkungan pondok pesantren (Bukti Kepulangan Sah Terverifikasi).';
 
                 if ($isTerlambat) {
                     $menitTerlambat = (int) $now->diffInMinutes($perizinan->tanggal_selesai);
@@ -165,6 +184,7 @@ class KamtibService
                     'tindakan_sanksi' => $sanksiLog,
                     'status_penyelesaian' => $statusPenyelesaianLog,
                     'recorded_by' => $petugasId,
+                    'nama_petugas' => $namaPetugas,
                     'catatan' => $catatanLog,
                 ]);
 

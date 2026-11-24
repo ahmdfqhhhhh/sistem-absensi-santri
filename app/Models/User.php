@@ -11,12 +11,60 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'role', 'no_hp', 'gender'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    /**
+     * Konstan role yang tersedia dalam sistem sesuai PRD.
+     */
+    public const ROLE_SUPER_ADMIN = 'super_admin';
+
+    public const ROLE_MUSYRIF = 'musyrif';
+
+    public const ROLE_KEAMANAN = 'keamanan';
+
+    public const ROLE_WALI_SANTRI = 'wali_santri';
+
+    public const ROLE_BENDAHARA = 'bendahara';
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === self::ROLE_SUPER_ADMIN;
+    }
+
+    public function isMusyrif(): bool
+    {
+        return $this->role === self::ROLE_MUSYRIF;
+    }
+
+    public function isKeamanan(): bool
+    {
+        return $this->role === self::ROLE_KEAMANAN;
+    }
+
+    public function isWali(): bool
+    {
+        return $this->role === self::ROLE_WALI_SANTRI;
+    }
+
+    public function isBendahara(): bool
+    {
+        return $this->role === self::ROLE_BENDAHARA;
+    }
+
+    public function isPutra(): bool
+    {
+        return $this->gender === 'putra';
+    }
+
+    public function isPutri(): bool
+    {
+        return $this->gender === 'putri';
+    }
 
     /**
      * Get the attributes that should be cast.

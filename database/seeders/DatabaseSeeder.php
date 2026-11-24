@@ -22,15 +22,25 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Buat Akun Admin & Petugas Kamtib/Pengasuhan
-        $admin = User::factory()->create([
-            'name' => 'Ustadz Administrator',
+        // 1. Buat Akun Pengguna Sesuai 4 Peran Pengguna di PRD
+        $admin = User::factory()->superAdmin()->create([
+            'name' => 'Ustadz Super Admin (Pengurus Pusat)',
             'email' => 'admin@pesantren.test',
         ]);
 
-        $petugasKamtib = User::factory()->create([
-            'name' => 'Ustadz Keamanan & Ketertiban',
+        $musyrif = User::factory()->musyrif()->create([
+            'name' => 'Ustadz Ahmad Musyrif',
+            'email' => 'musyrif@pesantren.test',
+        ]);
+
+        $petugasKamtib = User::factory()->keamanan()->create([
+            'name' => 'Ustadz Hasan (Pengurus Keamanan/Kamtib)',
             'email' => 'kamtib@pesantren.test',
+        ]);
+
+        $waliSantri = User::factory()->waliSantri()->create([
+            'name' => 'Bapak Rahmat (Wali Santri)',
+            'email' => 'wali@pesantren.test',
         ]);
 
         // 2. Buat Asrama Putra & Putri
@@ -41,13 +51,16 @@ class DatabaseSeeder extends Seeder
 
         $asramas = collect([$asramaPutra1, $asramaPutra2, $asramaPutri1, $asramaPutri2]);
 
-        // 3. Buat Rombongan Belajar / Kelas
-        $kelas1 = Kelas::factory()->create(['nama_kelas' => '10 Keagamaan A', 'tingkat' => '10', 'jurusan' => 'Keagamaan']);
-        $kelas2 = Kelas::factory()->create(['nama_kelas' => '11 Keagamaan A', 'tingkat' => '11', 'jurusan' => 'Keagamaan']);
-        $kelas3 = Kelas::factory()->create(['nama_kelas' => '12 Tahfidz A', 'tingkat' => '12', 'jurusan' => 'Tahfidz Al-Qur\'an']);
-        $kelas4 = Kelas::factory()->create(['nama_kelas' => '7 MTs Unggulan', 'tingkat' => '7', 'jurusan' => 'Madrasah Tsanawiyah']);
+        // 3. Buat Rombongan Belajar / Kelas (SMP, SMA, SMK dipisahkan)
+        $kelas1 = Kelas::factory()->create(['nama_kelas' => 'Kelas 7A SMP', 'tingkat' => '7 SMP', 'jurusan' => 'Umum']);
+        $kelas2 = Kelas::factory()->create(['nama_kelas' => 'Kelas 8A SMP', 'tingkat' => '8 SMP', 'jurusan' => 'Umum']);
+        $kelas3 = Kelas::factory()->create(['nama_kelas' => 'Kelas 9A SMP', 'tingkat' => '9 SMP', 'jurusan' => 'Umum']);
+        $kelas4 = Kelas::factory()->create(['nama_kelas' => '10 SMA IPA', 'tingkat' => '10 SMA', 'jurusan' => 'IPA']);
+        $kelas5 = Kelas::factory()->create(['nama_kelas' => '11 SMA IPS', 'tingkat' => '11 SMA', 'jurusan' => 'IPS']);
+        $kelas6 = Kelas::factory()->create(['nama_kelas' => '10 SMK TKJ', 'tingkat' => '10 SMK', 'jurusan' => 'Teknik Komputer & Jaringan']);
+        $kelas7 = Kelas::factory()->create(['nama_kelas' => '12 SMK RPL', 'tingkat' => '12 SMK', 'jurusan' => 'Rekayasa Perangkat Lunak']);
 
-        $kelasList = collect([$kelas1, $kelas2, $kelas3, $kelas4]);
+        $kelasList = collect([$kelas1, $kelas2, $kelas3, $kelas4, $kelas5, $kelas6, $kelas7]);
 
         // 4. Buat Santri
         $santriList = collect();
@@ -67,41 +80,38 @@ class DatabaseSeeder extends Seeder
             $santriList->push($santri);
         }
 
-        // 5. Buat Sesi Absensi
-        $sesiSubuh = SesiAbsensi::factory()->create([
-            'nama_sesi' => 'Sholat Subuh Berjamaah',
-            'kode_sesi' => 'SBUH-'.date('Ymd'),
-            'jenis' => 'sholat_berjamaah',
-            'tanggal' => today()->toDateString(),
-            'jam_mulai' => '04:30:00',
-            'jam_selesai' => '05:30:00',
-            'batas_terlambat' => '04:45:00',
-            'status' => 'dibuka',
-        ]);
+        // 5. Buat Sesi Absensi Rutin Harian (Sholat 5 Waktu & KBM Sekolah Pagi Max 07:00)
+        $dailySessions = SesiAbsensi::ensureDailySessions();
+        $sesiSubuh = $dailySessions->firstWhere('nama_sesi', 'Sholat Subuh Berjamaah');
+        $sesiSekolah = $dailySessions->firstWhere('nama_sesi', 'Presensi Masuk Sekolah / KBM Madrasah');
 
-        $sesiKajian = SesiAbsensi::factory()->create([
-            'nama_sesi' => 'Kajian Kitab Kuning Ba\'da Maghrib',
-            'kode_sesi' => 'KJ-MGB-'.date('Ymd'),
-            'jenis' => 'pengajian_kitab',
-            'tanggal' => today()->toDateString(),
-            'jam_mulai' => '18:45:00',
-            'jam_selesai' => '19:15:00',
-            'batas_terlambat' => '18:55:00',
-            'status' => 'dibuka',
-        ]);
-
-        // 6. Buat Record Absensi untuk Sesi Subuh
+        // 6. Buat Record Absensi Realistis untuk Sesi Subuh & KBM Sekolah
         foreach ($santriList as $santri) {
             $statusAbsen = fake()->randomElement(['hadir', 'hadir', 'hadir', 'hadir', 'terlambat', 'izin', 'sakit']);
 
-            Absensi::factory()->create([
-                'santri_id' => $santri->id,
-                'sesi_absensi_id' => $sesiSubuh->id,
-                'status' => $statusAbsen,
-                'waktu_absen' => in_array($statusAbsen, ['hadir', 'terlambat']) ? now()->subMinutes(rand(10, 50)) : null,
-                'metode' => in_array($statusAbsen, ['hadir', 'terlambat']) ? 'qr_code' : 'manual',
-                'recorded_by' => $admin->id,
-            ]);
+            if ($sesiSubuh) {
+                Absensi::factory()->create([
+                    'santri_id' => $santri->id,
+                    'sesi_absensi_id' => $sesiSubuh->id,
+                    'status' => $statusAbsen,
+                    'waktu_absen' => in_array($statusAbsen, ['hadir', 'terlambat']) ? now()->subMinutes(rand(10, 50)) : null,
+                    'metode' => in_array($statusAbsen, ['hadir', 'terlambat']) ? 'qr_code' : 'manual',
+                    'recorded_by' => $admin->id,
+                ]);
+            }
+
+            if ($sesiSekolah) {
+                $statusSekolah = fake()->randomElement(['hadir', 'hadir', 'hadir', 'terlambat', 'izin']);
+                Absensi::factory()->create([
+                    'santri_id' => $santri->id,
+                    'sesi_absensi_id' => $sesiSekolah->id,
+                    'status' => $statusSekolah,
+                    'waktu_absen' => in_array($statusSekolah, ['hadir', 'terlambat']) ? now()->subMinutes(rand(5, 30)) : null,
+                    'metode' => 'qr_code',
+                    'recorded_by' => $admin->id,
+                    'keterangan' => $statusSekolah === 'terlambat' ? 'Lewat batas waktu 07:00 WIB' : 'Tepat waktu sebelum 07:00 WIB',
+                ]);
+            }
         }
 
         // 7. Buat Riwayat Perizinan

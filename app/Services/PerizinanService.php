@@ -38,6 +38,16 @@ class PerizinanService
             $query->where('santri_id', $filters['santri_id']);
         }
 
+        if (! empty($filters['santri_ids'])) {
+            $query->whereIn('santri_id', $filters['santri_ids']);
+        }
+
+        if (! empty($filters['gender'])) {
+            $query->whereHas('santri', function ($q) use ($filters) {
+                $q->where('jenis_kelamin', $filters['gender']);
+            });
+        }
+
         if (! empty($filters['search'])) {
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
@@ -81,7 +91,7 @@ class PerizinanService
      *
      * @throws AbsensiException
      */
-    public function approve(int|Perizinan $perizinan, ?int $approverId = null, ?string $catatanApproval = null): Perizinan
+    public function approve(int|Perizinan $perizinan, ?int $approverId = null, ?string $catatanApproval = null, ?string $namaPemberiIzin = null): Perizinan
     {
         if (is_numeric($perizinan)) {
             $perizinan = Perizinan::with(['santri.asrama', 'santri.kelas'])->find($perizinan);
@@ -140,6 +150,7 @@ class PerizinanService
             'status' => 'disetujui',
             'approved_by' => $approverId,
             'catatan_approval' => $catatanApproval ?? 'Disetujui oleh pengasuhan pesantren.',
+            'nama_pemberi_izin' => $namaPemberiIzin,
             'qr_code_path' => $fileName,
             'qr_token' => $qrToken,
         ]);

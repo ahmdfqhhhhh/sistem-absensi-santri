@@ -37,6 +37,7 @@ class Perizinan extends Model
         'status',
         'approved_by',
         'catatan_approval',
+        'nama_pemberi_izin',
         'penjemput_nama',
         'penjemput_hubungan',
         'bukti_dokumen_path',
@@ -100,7 +101,18 @@ class Perizinan extends Model
     }
 
     /**
-     * Scope untuk perizinan yang sudah disetujui.
+     * Scope untuk perizinan yang sedang berlangsung di luar komplek.
+     *
+     * @param  Builder<$this>  $query
+     * @return Builder<$this>
+     */
+    public function scopeSedangBerlangsung(Builder $query): Builder
+    {
+        return $query->where('status', 'sedang_berlangsung');
+    }
+
+    /**
+     * Scope untuk perizinan yang telah disetujui (siap checkout di pos keamanan).
      *
      * @param  Builder<$this>  $query
      * @return Builder<$this>
@@ -108,20 +120,5 @@ class Perizinan extends Model
     public function scopeDisetujui(Builder $query): Builder
     {
         return $query->where('status', 'disetujui');
-    }
-
-    /**
-     * Scope untuk perizinan yang sedang berlangsung saat ini.
-     *
-     * @param  Builder<$this>  $query
-     * @return Builder<$this>
-     */
-    public function scopeSedangBerlangsung(Builder $query): Builder
-    {
-        $now = now();
-
-        return $query->where('status', 'disetujui')
-            ->where('tanggal_mulai', '<=', $now)
-            ->where('tanggal_selesai', '>=', $now);
     }
 }

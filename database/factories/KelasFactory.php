@@ -17,18 +17,29 @@ class KelasFactory extends Factory
      */
     public function definition(): array
     {
-        $tingkat = fake()->randomElement(['7', '8', '9', '10', '11', '12']);
-        $jurusan = in_array($tingkat, ['10', '11', '12'])
-            ? fake()->randomElement(['Keagamaan', 'IPA', 'IPS', 'Tahfidz Al-Qur\'an', 'Bahasa'])
-            : 'Madrasah Tsanawiyah';
-
-        $abjad = fake()->randomElement(['A', 'B', 'C', '1', '2']);
+        $jenjang = fake()->randomElement(['SMP', 'SMA', 'SMK']);
+        if ($jenjang === 'SMP') {
+            $angka = fake()->randomElement(['7', '8', '9']);
+            $tingkat = $angka . ' SMP';
+            $jurusan = 'Umum';
+            $nama = 'Kelas ' . $angka . fake()->randomElement(['A', 'B']) . ' SMP';
+        } elseif ($jenjang === 'SMA') {
+            $angka = fake()->randomElement(['10', '11', '12']);
+            $tingkat = $angka . ' SMA';
+            $jurusan = fake()->randomElement(['IPA', 'IPS', 'Keagamaan']);
+            $nama = $angka . ' SMA ' . $jurusan;
+        } else {
+            $angka = fake()->randomElement(['10', '11', '12']);
+            $tingkat = $angka . ' SMK';
+            $jurusan = fake()->randomElement(['TKJ', 'Otomotif', 'Akuntansi']);
+            $nama = $angka . ' SMK ' . $jurusan;
+        }
 
         return [
-            'nama_kelas' => $tingkat.' '.$jurusan.' '.$abjad,
-            'tingkat' => (string) $tingkat,
+            'nama_kelas' => $nama,
+            'tingkat' => $tingkat,
             'jurusan' => $jurusan,
-            'wali_kelas' => 'Ustadz '.fake()->name(),
+            'wali_kelas' => 'Ustadz ' . fake()->name(),
             'tahun_ajaran' => '2026/2027',
         ];
     }

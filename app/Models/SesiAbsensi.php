@@ -51,6 +51,81 @@ class SesiAbsensi extends Model
     }
 
     /**
+     * Pastikan sesi harian (sholat 5 waktu & sekolah) otomatis dibuat untuk hari ini.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, static>
+     */
+    public static function ensureDailySessions(): \Illuminate\Database\Eloquent\Collection
+    {
+        $today = today();
+        $defaults = [
+            [
+                'nama_sesi' => 'Sholat Subuh Berjamaah',
+                'kode_sesi' => 'SBH-'.$today->format('Ymd'),
+                'jenis' => 'sholat_berjamaah',
+                'jam_mulai' => '04:15:00',
+                'jam_selesai' => '05:30:00',
+                'batas_terlambat' => '04:45:00',
+            ],
+            [
+                'nama_sesi' => 'Presensi Masuk Sekolah / KBM Madrasah',
+                'kode_sesi' => 'SCH-'.$today->format('Ymd'),
+                'jenis' => 'kegiatan_belajar',
+                'jam_mulai' => '06:30:00',
+                'jam_selesai' => '07:30:00',
+                'batas_terlambat' => '07:00:00',
+            ],
+            [
+                'nama_sesi' => 'Sholat Dzuhur Berjamaah',
+                'kode_sesi' => 'DZH-'.$today->format('Ymd'),
+                'jenis' => 'sholat_berjamaah',
+                'jam_mulai' => '11:45:00',
+                'jam_selesai' => '13:00:00',
+                'batas_terlambat' => '12:15:00',
+            ],
+            [
+                'nama_sesi' => 'Sholat Ashar Berjamaah',
+                'kode_sesi' => 'ASH-'.$today->format('Ymd'),
+                'jenis' => 'sholat_berjamaah',
+                'jam_mulai' => '15:00:00',
+                'jam_selesai' => '16:15:00',
+                'batas_terlambat' => '15:30:00',
+            ],
+            [
+                'nama_sesi' => 'Sholat Maghrib Berjamaah',
+                'kode_sesi' => 'MGH-'.$today->format('Ymd'),
+                'jenis' => 'sholat_berjamaah',
+                'jam_mulai' => '17:45:00',
+                'jam_selesai' => '19:00:00',
+                'batas_terlambat' => '18:15:00',
+            ],
+            [
+                'nama_sesi' => 'Sholat Isya Berjamaah',
+                'kode_sesi' => 'ISY-'.$today->format('Ymd'),
+                'jenis' => 'sholat_berjamaah',
+                'jam_mulai' => '19:15:00',
+                'jam_selesai' => '20:30:00',
+                'batas_terlambat' => '19:45:00',
+            ],
+        ];
+
+        foreach ($defaults as $session) {
+            static::firstOrCreate(
+                [
+                    'tanggal' => $today,
+                    'kode_sesi' => $session['kode_sesi'],
+                ],
+                array_merge($session, [
+                    'tanggal' => $today,
+                    'status' => 'dibuka',
+                ])
+            );
+        }
+
+        return static::whereDate('tanggal', $today)->orderBy('jam_mulai')->get();
+    }
+
+    /**
      * Relasi ke seluruh presensi santri di sesi ini.
      *
      * @return HasMany<Absensi, $this>

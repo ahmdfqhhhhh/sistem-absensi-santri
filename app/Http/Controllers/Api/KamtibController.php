@@ -33,6 +33,7 @@ class KamtibController extends Controller
             'lokasi' => ['nullable', 'string', 'max:100'],
             'catatan' => ['nullable', 'string', 'max:500'],
             'petugas_id' => ['nullable', 'integer'],
+            'nama_petugas' => ['nullable', 'string', 'max:150'],
         ], [
             'qr_data.required' => 'Data QR Code Surat Izin (qr_data) wajib disertakan.',
             'action.in' => 'Action harus salah satu dari: auto, checkout, atau checkin.',
@@ -51,15 +52,21 @@ class KamtibController extends Controller
         $lokasi = $request->input('lokasi');
         $catatan = $request->input('catatan');
         $petugasId = $request->user()?->id ?? $request->input('petugas_id');
+        $namaPetugas = $request->input('nama_petugas');
 
         try {
-            $result = $this->kamtibService->scanSuratIzin(
-                qrData: $qrData,
-                action: $action,
-                petugasId: $petugasId ? (int) $petugasId : null,
-                lokasi: $lokasi ? (string) $lokasi : null,
-                catatan: $catatan ? (string) $catatan : null
-            );
+            $params = [
+                'qrData' => $qrData,
+                'action' => $action,
+                'petugasId' => $petugasId ? (int) $petugasId : null,
+                'lokasi' => $lokasi ? (string) $lokasi : null,
+                'catatan' => $catatan ? (string) $catatan : null,
+            ];
+            if ($namaPetugas !== null) {
+                $params['namaPetugas'] = (string) $namaPetugas;
+            }
+
+            $result = $this->kamtibService->scanSuratIzin(...$params);
 
             $resolvedAction = $result['action'];
             $isTerlambat = $result['is_terlambat'];

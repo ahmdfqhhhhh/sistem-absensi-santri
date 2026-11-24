@@ -22,10 +22,12 @@ class SantriFactory extends Factory
         $gender = fake()->randomElement(['L', 'P']);
 
         return [
-            'nis' => fake()->unique()->numerify('SAN-2026-#####'),
+            'nis' => 'SAN-'.now()->year.'-'.fake()->unique()->numerify('########'),
             'nama' => fake()->name($gender === 'L' ? 'male' : 'female'),
             'asrama_id' => Asrama::factory(),
+            'kamar' => 'Kamar '.fake()->numberBetween(101, 115),
             'kelas_id' => Kelas::factory(),
+            'nama_wali' => fake()->name(),
             'no_wa_wali' => '08'.fake()->numerify('##########'),
             'qr_code_path' => 'qrcodes/'.fake()->uuid().'.svg',
             'jenis_kelamin' => $gender,

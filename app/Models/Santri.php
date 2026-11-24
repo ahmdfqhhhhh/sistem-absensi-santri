@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Santri extends Model
 {
@@ -30,7 +31,9 @@ class Santri extends Model
         'nis',
         'nama',
         'asrama_id',
+        'kamar',
         'kelas_id',
+        'nama_wali',
         'no_wa_wali',
         'qr_code_path',
         'jenis_kelamin',
@@ -38,6 +41,17 @@ class Santri extends Model
         'tanggal_lahir',
         'alamat',
         'foto_path',
+        'face_descriptor',
+    ];
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array<int, string>
+     */
+    protected $appends = [
+        'foto_url',
+        'has_face_descriptor',
     ];
 
     /**
@@ -49,7 +63,44 @@ class Santri extends Model
     {
         return [
             'tanggal_lahir' => 'date',
+            'face_descriptor' => 'array',
         ];
+    }
+
+    /**
+     * Cek apakah santri sudah memiliki data vektor wajah terdaftar.
+     */
+    public function getHasFaceDescriptorAttribute(): bool
+    {
+        return !empty($this->face_descriptor);
+    }
+
+    /**
+     * URL Foto Santri.
+     */
+    public function getFotoUrlAttribute(): ?string
+    {
+        if ($this->foto_path && Storage::disk('public')->exists($this->foto_path)) {
+            return Storage::disk('public')->url($this->foto_path);
+        }
+
+        return null;
+    }
+
+    /**
+     * Scope filter santri putra.
+     */
+    public function scopePutra(Builder $query): Builder
+    {
+        return $query->where('jenis_kelamin', 'L');
+    }
+
+    /**
+     * Scope filter santri putri.
+     */
+    public function scopePutri(Builder $query): Builder
+    {
+        return $query->where('jenis_kelamin', 'P');
     }
 
     /**
@@ -103,35 +154,50 @@ class Santri extends Model
     }
 
     /**
-     * Scope untuk santri yang masih berstatus aktif.
+     * Relasi ke seluruh tagihan dan pembayaran santri.
      *
-     * @param  Builder<$this>  $query
-     * @return Builder<$this>
+     * @return HasMany<Tagihan, $this>
      */
-    public function scopeAktif(Builder $query): Builder
+    public function tagihans(): HasMany
     {
-        return $query->where('status', 'aktif');
+        return $this->hasMany(Tagihan::class, 'santri_id');
     }
 
     /**
-     * Scope untuk santri putra.
-     *
-     * @param  Builder<$this>  $query
-     * @return Builder<$this>
+     * Hitung total nominal tunggakan santri yang belum dilunasi dan telah lewat jatuh tempo.
      */
-    public function scopePutra(Builder $query): Builder
+    public function totalTunggakan(): int
     {
-        return $query->where('jenis_kelamin', 'L');
+        return (int) $this->tagihans()
+            ->where('status', 'belum_bayar')
+            ->where('jatuh_tempo', '<', today())
+            ->sum('nominal');
     }
 
     /**
-     * Scope untuk santri putri.
-     *
-     * @param  Builder<$this>  $query
-     * @return Builder<$this>
+     * Accessor total nominal tunggakan.
      */
-    public function scopePutri(Builder $query): Builder
+    public function getTotalTunggakanAttribute(): int
     {
-        return $query->where('jenis_kelamin', 'P');
+        return $this->totalTunggakan();
+    }
+
+    /**
+     * Cek apakah santri memiliki tunggakan yang belum dilunasi.
+     */
+    public function hasTunggakan(): bool
+    {
+        return $this->tagihans()
+            ->where('status', 'belum_bayar')
+            ->where('jatuh_tempo', '<', today())
+            ->exists();
+    }
+
+    /**
+     * Accessor has_tunggakan / hasTunggakan untuk mencegah bentrok dynamic relationship Eloquent.
+     */
+    public function getHasTunggakanAttribute(): bool
+    {
+        return $this->hasTunggakan();
     }
 }
